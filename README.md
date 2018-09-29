@@ -1,7 +1,7 @@
 # MinerWatch Arduino
 Arduino part for [MinerWatch](https://github.com/ymeramees/minerwatch). Written for and tested on Arduino Nano, but should work on other models also.
 
-##Getting Started
+## Getting Started
 
 Upload to Arduino device with Arduino IDE
 
