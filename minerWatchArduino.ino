@@ -1,9 +1,9 @@
 char receivedChar;
 char lastChar;
 bool newData = false;
-int heartBeatTime = 300;  //Aeg, peale mida viimasest elus olemise teatest kaevurile restart tehakse, sekundites
-int lastHeartBeat = 0;  //Sekundid alates viimasest elus olemise teatest, sekundites
-int restartDelay = 500; //Aeg, kui kaua hoitakse restarti tehes pin sees, millisekundites
+int heartBeatTime = 300;  //Timeout before restarting main miner after last heartbeat signal, in seconds
+int lastHeartBeat = 0;  //Time from last heartbeat signal, in seconds
+int restartDelay = 500; //Time how long reset button will be pressed, in milliseconds
 
 #define juhtKaevur 0
 
@@ -11,9 +11,9 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(juhtKaevur, OUTPUT);
-  pinMode(1, OUTPUT);  //Väljundiks
-  pinMode(2, OUTPUT);  //Väljundiks
-  pinMode(3, OUTPUT);  //Väljundiks
+  pinMode(1, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
   // initialize timer1 
   //noInterrupts();           // disable all interrupts
   TCCR1A = 0;
@@ -37,7 +37,7 @@ void loop() {
   readSerial();
   if(receivedChar == 'e') {
     Serial.println("Sain, elus");
-    lastHeartBeat = 0;  //Taimerile reset
+    lastHeartBeat = 0;  //Reset timer
     lastChar = 0;
     receivedChar = 0;
     newData = false;
@@ -50,7 +50,7 @@ void loop() {
 
   if((TIFR1 & (1 << OCF1A))) {
     lastHeartBeat++;
-    if(lastHeartBeat >= heartBeatTime) {  //Juhtiv kaevur ei vasta, teha restart
+    if(lastHeartBeat >= heartBeatTime) {  //No signal from main miner, do restart
       restart(juhtKaevur);
       lastHeartBeat = 0;
     }
@@ -68,12 +68,12 @@ void readSerial() {
     if(newData) {
       lastChar = receivedChar;
     }
-    if(lastChar == 'a'){  //Uus aeg, kui kaua peale viimast elusolemise signaali juhtkaevurile restart tehakse
+    if(lastChar == 'a'){  //New timeout before restarting main miner
       heartBeatTime = Serial.parseInt();
       lastChar = 0;
       receivedChar = 0;
       newData = false;
-    }if(lastChar == 'd'){ //Uus restardi tegemise pini viivise aeg, millisekundites
+    }if(lastChar == 'd'){ //New time for pressing reset button, in milliseconds
       restartDelay = Serial.parseInt();
       lastChar = 0;
       receivedChar = 0;
@@ -85,10 +85,10 @@ void readSerial() {
  }
 }
 
-void restart(int no) {  //Lülitab küsitud pistiku reset pin'i
-  digitalWrite(no, HIGH); //Reset sisse
-  delay(restartDelay); //Paus
-  digitalWrite(no, LOW);  //Reset välja
+void restart(int no) {
+  digitalWrite(no, HIGH); //Reset button down
+  delay(restartDelay);
+  digitalWrite(no, LOW);  //Release reset button
   
   Serial.print(no);
   Serial.println(", restart");
